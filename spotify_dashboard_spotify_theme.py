@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.io as pio
+import requests
 pio.json.config.default_engine = "json"
 
 # Custom theme configuration
@@ -111,12 +112,15 @@ with st.sidebar:
     )
     st.markdown('</div>', unsafe_allow_html=True)
     
-    # Artist Analysis
+    # Artist Analysis with autocomplete
     st.markdown('<div class="sidebar-section">', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-section-title">🎤 Artist Analysis</div>', unsafe_allow_html=True)
-    artist_filter = st.text_input(
-        "Filter by Artist",
-        help="Enter exact artist name to view detailed analytics"
+    artist_list = sorted(df['master_metadata_album_artist_name'].dropna().unique())
+    artist_filter = st.selectbox(
+        "Select or Search Artist",
+        options=["(All Artists)"] + artist_list,
+        index=0,
+        help="Start typing to search for an artist"
     )
     st.markdown('</div>', unsafe_allow_html=True)
     
@@ -182,7 +186,7 @@ top_tracks = top_tracks[['Track', 'Listening Time']]
 st.dataframe(top_tracks)
 
 # Top N Tracks by Artist
-if artist_filter:
+if artist_filter and artist_filter != "(All Artists)":
     st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
     artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
     top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
@@ -291,7 +295,26 @@ st.plotly_chart(fig_time, use_container_width=True)
 
 # Artist-specific Analytics
 st.subheader("🎤 Artist Analytics")
-if artist_filter:
+if artist_filter and artist_filter != "(All Artists)":
+    # Display artist image from Wikipedia
+    def get_artist_image(artist_name):
+        url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&prop=pageimages&titles={artist_name}&pithumbsize=300"
+        try:
+            resp = requests.get(url, timeout=5)
+            data = resp.json()
+            pages = data['query']['pages']
+            for page in pages.values():
+                if 'thumbnail' in page:
+                    return page['thumbnail']['source']
+        except Exception:
+            return None
+        return None
+    artist_img_url = get_artist_image(artist_filter)
+    if artist_img_url:
+        st.image(artist_img_url, caption=artist_filter, width=200)
+    else:
+        st.info(f"No image found for {artist_filter}.")
+
     artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
     
     # Artist-specific metrics
