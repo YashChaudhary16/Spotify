@@ -186,20 +186,20 @@ top_tracks = top_tracks[['Track', 'Listening Time']]
 st.dataframe(top_tracks)
 
 # Top N Tracks by Artist
-if artist_filter and artist_filter != "(All Artists)":
-    st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
-    artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
-    top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
-                         .sum()
-                         .sort_values(ascending=False)
-                         .head(top_n)
-                         .reset_index())
-    top_artist_tracks.columns = ['Track', 'Hours']
-    top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
-        lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
-    )
-    top_artist_tracks = top_artist_tracks[['Track', 'Listening Time']]
-    st.dataframe(top_artist_tracks)
+# if artist_filter and artist_filter != "(All Artists)":
+#     st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
+#     artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
+#     top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
+#                          .sum()
+#                          .sort_values(ascending=False)
+#                          .head(top_n)
+#                          .reset_index())
+#     top_artist_tracks.columns = ['Track', 'Hours']
+#     top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
+#         lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
+#     )
+#     top_artist_tracks = top_artist_tracks[['Track', 'Listening Time']]
+#     st.dataframe(top_artist_tracks)
 
 # Platform Comparison
 st.subheader("🖥️ Platform Usage Comparison")
@@ -330,16 +330,30 @@ if artist_filter and artist_filter != "(All Artists)":
         st.metric(f"Average Daily Hours of {artist_filter}", f"{artist_avg_hours:.2f}")
     
     # Artist's top tracks
-    st.subheader(f"🎵 Top {int(top_n)} Tracks by {artist_filter}")
+    # st.subheader(f"🎵 Top {int(top_n)} Tracks by {artist_filter}")
+    # top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
+    #                     .sum()
+    #                     .sort_values(ascending=False)
+    #                     .head(int(top_n))
+    #                     .reset_index())
+    # top_artist_tracks.columns = ['Track', 'Hours']
+    # top_artist_tracks['Hours'] = top_artist_tracks['Hours'].round(2)
+    # st.dataframe(top_artist_tracks)
+
+    st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
+    artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
     top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
-                        .sum()
-                        .sort_values(ascending=False)
-                        .head(int(top_n))
-                        .reset_index())
+                         .sum()
+                         .sort_values(ascending=False)
+                         .head(top_n)
+                         .reset_index())
     top_artist_tracks.columns = ['Track', 'Hours']
-    top_artist_tracks['Hours'] = top_artist_tracks['Hours'].round(2)
+    top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
+        lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
+    )
+    top_artist_tracks = top_artist_tracks[['Track', 'Listening Time']]
     st.dataframe(top_artist_tracks)
-    
+
     # Artist's listening time over time
     st.subheader(f"📈 {artist_filter} Listening Time Over Time")
     artist_time_series = artist_df.groupby('date')['hours'].sum().round(2).reset_index()
