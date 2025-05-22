@@ -354,6 +354,43 @@ if artist_filter and artist_filter != "(All Artists)":
     top_artist_tracks = top_artist_tracks[['Track', 'Listening Time']]
     st.dataframe(top_artist_tracks)
 
+    # Helper: Time bucket function
+    def time_bucket(h):
+        if 5 <= h <= 11:
+            return 'Morning (5-11)'
+        elif 12 <= h <= 17:
+            return 'Afternoon (12-17)'
+        elif 18 <= h <= 22:
+            return 'Evening (18-22)'
+        else:
+            return 'Night (23-4)'
+
+
+    # Artist's listening time by time of day
+    st.subheader(f"⏰ {artist_filter} Listening by Time of Day")
+
+    artist_df['hour'] = pd.to_datetime(artist_df['ts_local_clean']).dt.hour
+    artist_df['time_bucket'] = artist_df['hour'].apply(time_bucket)
+
+    artist_time_of_day = (artist_df.groupby('time_bucket')['hours']
+                        .sum()
+                        .reindex(['Morning (5-11)', 'Afternoon (12-17)', 'Evening (18-22)', 'Night (23-4)'])
+                        .reset_index())
+
+    fig_artist_timeofday = px.bar(artist_time_of_day, 
+                                x='time_bucket', 
+                                y='hours',
+                                color='time_bucket',
+                                color_discrete_sequence=['#1db954', '#b3b3b3', '#535353', '#191414'],
+                                title=f"Total Listening Hours of {artist_filter} by Time of Day")
+    fig_artist_timeofday.update_layout(
+        showlegend=False,
+        plot_bgcolor='#282828',
+        paper_bgcolor='#282828',
+        font=dict(color='white')
+    )
+    st.plotly_chart(fig_artist_timeofday, use_container_width=True)
+
     # Artist's listening time over time
     st.subheader(f"📈 {artist_filter} Listening Time Over Time")
     artist_time_series = artist_df.groupby('date')['hours'].sum().round(2).reset_index()
