@@ -515,7 +515,17 @@ daily_totals['weekday'] = pd.to_datetime(daily_totals['date']).dt.day_name()
 weekday_hours = daily_totals.groupby('weekday')['hours'].mean().reindex([
     'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']).reset_index()
 
-heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0)
+# heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0)
+month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+# Apply Categorical type to preserve order
+df['month'] = pd.Categorical(df['month'], categories=month_order, ordered=True)
+df['weekday'] = pd.Categorical(df['weekday'], categories=weekday_order, ordered=True)
+
+heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0).loc[month_order]
+
 
 # --- UI Section: Listening Streaks and Milestones ---
 st.markdown("## 🏆 Listening Streaks & Milestones")
