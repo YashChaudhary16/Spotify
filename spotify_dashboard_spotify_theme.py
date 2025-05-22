@@ -10,7 +10,7 @@ st.set_page_config(
     page_title="Spotify Wrapped Dashboard",
     page_icon="🎧",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Custom CSS
@@ -68,11 +68,7 @@ st.markdown("""
         font-weight: bold;
         margin-bottom: 10px;
     }
-    </style>
-    """, unsafe_allow_html=True)
-
-st.markdown("""
-    <style>
+    /* Overall statistics card hover effect */
     .metric-card {
         background: rgba(40,40,40,0.6);
         backdrop-filter: blur(12px);
@@ -81,18 +77,78 @@ st.markdown("""
         text-align: center;
         box-shadow: 0 4px 20px rgba(0,0,0,0.3);
         color: #fff;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .metric-card:hover {
+        transform: translateY(-5px) scale(1.03);
+        box-shadow: 0 8px 32px rgba(30,185,84,0.15);
     }
     .metric-card h1 {
         color: #1DB954;
         font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
     }
     .metric-card p {
         font-size: 16px;
-        color: #ccc;
+        color: #fff;
+        margin: 0;
+    }
+    /* Artist card heading and metrics */
+    .artist-card h3 {
+        color: #1DB954 !important;
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+    }
+    .metric-box h2 {
+        color: #1DB954 !important;
+        font-size: 2.2rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }
+    .metric-box span {
+        color: #fff !important;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+    }
+    /* Spotify logo header */
+    .spotify-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 1.5rem;
+    }
+    .spotify-logo {
+        height: 40px;
+        width: 40px;
+    }
+    .spotify-brand {
+        color: #1DB954;
+        font-size: 2rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+    .main-green-title {
+        color: #1DB954 !important;
+        font-size: 2.5rem !important;
+        font-weight: 800 !important;
+        margin-bottom: 1.5rem !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
+# Spotify logo and brand header
+st.markdown(
+    '''<div class="spotify-header">
+        <img class="spotify-logo" src="https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg" alt="Spotify Logo">
+        <span class="spotify-brand">Spotify Analytics</span>
+    </div>''',
+    unsafe_allow_html=True
+)
+
+# Main green heading
+st.markdown('<div class="main-green-title">🎧 Your Ultimate Spotify Wrapped Dashboard</div>', unsafe_allow_html=True)
 
 # Load data
 @st.cache_data
@@ -175,17 +231,15 @@ h = int(avg_hours_per_day)
 m = int(round((avg_hours_per_day - h) * 60))
 formatted_avg = f"{h} hrs {m} mins"
 
-st.title("🎧 Your Ultimate Spotify Wrapped Dashboard")
-
 # Create three columns for metrics
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.markdown(f"""<div class="metric-card"><h1>{total_hours:.2f}</h1><p>Total Listening Hours</p></div>""", unsafe_allow_html=True)
+    st.markdown(f'''<div class="metric-card"><h1>{total_hours:.2f}</h1><p>Total Listening Hours</p></div>''', unsafe_allow_html=True)
 with col2:
-    st.markdown(f"""<div class="metric-card"><h1>{total_tracks:,}</h1><p>Total Tracks Played</p></div>""", unsafe_allow_html=True)
+    st.markdown(f'''<div class="metric-card"><h1>{total_tracks:,}</h1><p>Total Tracks Played</p></div>''', unsafe_allow_html=True)
 with col3:
-    st.markdown(f"""<div class="metric-card"><h1>{formatted_avg}</h1><p>Avg Listen Time / Day</p></div>""", unsafe_allow_html=True)
+    st.markdown(f'''<div class="metric-card"><h1>{formatted_avg}</h1><p>Avg Listen Time / Day</p></div>''', unsafe_allow_html=True)
 
 # Add a divider
 st.markdown("---")
@@ -328,6 +382,164 @@ fig_time.update_layout(
 )
 st.plotly_chart(fig_time, use_container_width=True)
 
+# --- Feature 1: Listening Streaks ---
+df_sorted = df.sort_values('date')
+activity_days = pd.Series(df_sorted['date'].unique())
+activity_days = pd.to_datetime(activity_days)
+streaks = (activity_days.diff() != pd.Timedelta(days=1)).cumsum()
+streak_lengths = activity_days.groupby(streaks).agg(['count', 'min', 'max'])
+longest_streak = streak_lengths['count'].max()
+longest_streak_row = streak_lengths[streak_lengths['count'] == longest_streak].iloc[0]
+longest_streak_start = longest_streak_row['min'].date()
+longest_streak_end = longest_streak_row['max'].date()
+
+# Day with highest listening
+max_day_row = df.groupby('date')['hours'].sum().sort_values(ascending=False).reset_index().iloc[0]
+max_day = max_day_row['date']
+max_day_hours = max_day_row['hours']
+
+# --- Feature 4: Listening Milestones ---
+first_row = df.sort_values('ts_local_clean').iloc[0]
+first_song = first_row['master_metadata_track_name']
+first_artist = first_row['master_metadata_album_artist_name']
+first_date = first_row['date']
+
+# Cumulative hours for milestones
+cumulative = df.groupby('date')['hours'].sum().cumsum().reset_index()
+milestones = [100, 500, 1000, 2000, 5000, 10000, 20000]
+milestone_dates = {}
+for m in milestones:
+    milestone_row = cumulative[cumulative['hours'] >= m].head(1)
+    if not milestone_row.empty:
+        milestone_dates[m] = milestone_row.iloc[0]['date']
+
+# Most listened track and date
+track_hours = df.groupby('master_metadata_track_name')['hours'].sum().sort_values(ascending=False)
+most_listened_track = track_hours.index[0]
+most_listened_hours = track_hours.iloc[0]
+most_listened_date = df[df['master_metadata_track_name'] == most_listened_track].groupby('date')['hours'].sum().idxmax()
+
+# --- Feature 5: Listening by Time of Day ---
+df['hour'] = pd.to_datetime(df['ts_local_clean']).dt.hour
+def time_bucket(h):
+    if 5 <= h <= 11:
+        return 'Morning (5-11)'
+    elif 12 <= h <= 17:
+        return 'Afternoon (12-17)'
+    elif 18 <= h <= 22:
+        return 'Evening (18-22)'
+    else:
+        return 'Night (23-4)'
+df['time_bucket'] = df['hour'].apply(time_bucket)
+time_of_day = df.groupby('time_bucket')['hours'].sum().reindex([
+    'Morning (5-11)', 'Afternoon (12-17)', 'Evening (18-22)', 'Night (23-4)']).reset_index()
+
+# --- Feature 7: Skips and Replays Insight ---
+total_skipped = df['skipped'].sum() if 'skipped' in df.columns else 0
+top_skipped = (df[df['skipped'] == True]
+               .groupby('master_metadata_track_name')
+               .size()
+               .sort_values(ascending=False)
+               .head(5)
+               .reset_index(name='Skips')) if 'skipped' in df.columns else pd.DataFrame()
+top_played = (df[df['skipped'] == False]
+              .groupby('master_metadata_track_name')['hours']
+              .sum()
+              .sort_values(ascending=False)
+              .head(5)
+              .reset_index()) if 'skipped' in df.columns else pd.DataFrame()
+
+# --- Custom Feature: Monthly and Weekday Trends ---
+df['month'] = pd.to_datetime(df['ts_local_clean']).dt.strftime('%b')
+df['month_num'] = pd.to_datetime(df['ts_local_clean']).dt.month
+df['weekday'] = pd.to_datetime(df['ts_local_clean']).dt.day_name()
+monthly_hours = df.groupby(['month_num', 'month'])['hours'].sum().reset_index().sort_values('month_num')
+
+# FIX: Average daily listening hours by weekday (use daily totals)
+daily_totals = df.groupby('date')['hours'].sum().reset_index()
+daily_totals['weekday'] = pd.to_datetime(daily_totals['date']).dt.day_name()
+weekday_hours = daily_totals.groupby('weekday')['hours'].mean().reindex([
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']).reset_index()
+
+# heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0)
+month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+# Apply Categorical type to preserve order
+df['month'] = pd.Categorical(df['month'], categories=month_order, ordered=True)
+df['weekday'] = pd.Categorical(df['weekday'], categories=weekday_order, ordered=True)
+
+heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0).loc[month_order]
+
+
+# --- UI Section: Listening Streaks and Milestones ---
+st.markdown("## 🏆 Listening Streaks & Milestones")
+col1, col2, col3 = st.columns(3)
+with col1:
+    st.metric("Longest Listening Streak", f"{longest_streak} days", f"{longest_streak_start} → {longest_streak_end}")
+with col2:
+    st.metric("Day with Most Listening", f"{max_day_hours:.2f} hrs", f"{max_day}")
+with col3:
+    st.metric("First Song Played", f"{first_song}", f"{first_artist} ({first_date})")
+
+# Milestones Timeline
+st.markdown("### 🎉 Listening Milestones")
+for m, d in milestone_dates.items():
+    st.info(f"Crossed {m} hours on {d}")
+st.success(f"Most Listened Track: {most_listened_track} ({most_listened_hours:.2f} hrs), Top Day: {most_listened_date}")
+
+# --- UI Section: Listening by Time of Day ---
+st.markdown("## ⏰ Listening by Time of Day")
+fig_timeofday = px.bar(time_of_day, x='time_bucket', y='hours',
+                      color='time_bucket',
+                      color_discrete_sequence=['#1db954', '#b3b3b3', '#535353', '#191414'],
+                      title="Total Listening Hours by Time of Day")
+fig_timeofday.update_layout(showlegend=False, plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
+st.plotly_chart(fig_timeofday, use_container_width=True)
+
+# --- UI Section: Skips and Replays ---
+st.markdown("## ⏭️ Skips and Replays Insight")
+col1, col2 = st.columns(2)
+with col1:
+    st.metric("Total Skipped Tracks", int(total_skipped))
+    if not top_skipped.empty:
+        st.dataframe(top_skipped, use_container_width=True)
+with col2:
+    st.metric("Top Played (Non-Skipped)", "")
+    if not top_played.empty:
+        st.dataframe(top_played, use_container_width=True)
+
+# --- UI Section: Monthly and Weekday Trends ---
+st.markdown("## 📅 Monthly and Weekday Listening Trends")
+fig_month = px.bar(monthly_hours, x='month', y='hours',
+                   title="Total Listening Hours per Month",
+                   color_discrete_sequence=['#1db954'],
+                   category_orders={'month': list(monthly_hours['month'])})
+fig_month.update_layout(plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
+st.plotly_chart(fig_month, use_container_width=True)
+
+fig_weekday = px.bar(weekday_hours, x='weekday', y='hours',
+                     title="Average Daily Listening Hours by Weekday",
+                     color_discrete_sequence=['#1db954'],
+                     category_orders={'weekday': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']})
+fig_weekday.update_layout(plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
+st.plotly_chart(fig_weekday, use_container_width=True)
+
+fig_heatmap = px.imshow(heatmap_data,
+                       labels=dict(x="Weekday", y="Month", color="Hours"),
+                       x=heatmap_data.columns,
+                       y=heatmap_data.index,
+                       color_continuous_scale=['#121212', '#1db954'],
+                       title="Listening Hours: Month vs. Weekday")
+fig_heatmap.update_layout(plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
+st.plotly_chart(fig_heatmap, use_container_width=True)
+
+# --- Feature 14: Export Summary to PDF/PNG (Placeholder) ---
+# st.markdown("## 📤 Export Your Spotify Summary")
+# st.info("Export to PDF/PNG coming soon! (Will include total hours, top tracks, top artist, and streaks)")
+# (Implementation would use pdfkit/imgkit/html2image and st.download_button)
+
 # Artist-specific Analytics
 st.subheader("🎤 Artist Analytics")
 if artist_filter and artist_filter != "(All Artists)":
@@ -374,12 +586,6 @@ if artist_filter and artist_filter != "(All Artists)":
         justify-content: center;
         color: white;
     }
-    .artist-info h3 {
-        color: #1DB954;
-        font-size: 2rem;
-        margin-bottom: 20px;
-        font-weight: 600;
-    }
     .metric-row {
         display: flex;
         gap: 32px;
@@ -398,17 +604,6 @@ if artist_filter and artist_filter != "(All Artists)":
     .metric-box:hover {
         transform: scale(1.03);
         box-shadow: 0 0 12px #1DB95444;
-    }
-    .metric-box h2 {
-        color: #fff;
-        font-size: 2.2rem;
-        margin-bottom: 8px;
-        font-weight: 700;
-    }
-    .metric-box span {
-        color: #b3b3b3;
-        font-size: 0.95rem;
-        letter-spacing: 0.5px;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -606,161 +801,3 @@ if artist_filter and artist_filter != "(All Artists)":
         geo=dict(bgcolor='#282828')
     )
     st.plotly_chart(fig_artist_map, use_container_width=True)
-
-# --- Feature 1: Listening Streaks ---
-df_sorted = df.sort_values('date')
-activity_days = pd.Series(df_sorted['date'].unique())
-activity_days = pd.to_datetime(activity_days)
-streaks = (activity_days.diff() != pd.Timedelta(days=1)).cumsum()
-streak_lengths = activity_days.groupby(streaks).agg(['count', 'min', 'max'])
-longest_streak = streak_lengths['count'].max()
-longest_streak_row = streak_lengths[streak_lengths['count'] == longest_streak].iloc[0]
-longest_streak_start = longest_streak_row['min'].date()
-longest_streak_end = longest_streak_row['max'].date()
-
-# Day with highest listening
-max_day_row = df.groupby('date')['hours'].sum().sort_values(ascending=False).reset_index().iloc[0]
-max_day = max_day_row['date']
-max_day_hours = max_day_row['hours']
-
-# --- Feature 4: Listening Milestones ---
-first_row = df.sort_values('ts_local_clean').iloc[0]
-first_song = first_row['master_metadata_track_name']
-first_artist = first_row['master_metadata_album_artist_name']
-first_date = first_row['date']
-
-# Cumulative hours for milestones
-cumulative = df.groupby('date')['hours'].sum().cumsum().reset_index()
-milestones = [100, 500, 1000, 2000, 5000, 10000, 20000]
-milestone_dates = {}
-for m in milestones:
-    milestone_row = cumulative[cumulative['hours'] >= m].head(1)
-    if not milestone_row.empty:
-        milestone_dates[m] = milestone_row.iloc[0]['date']
-
-# Most listened track and date
-track_hours = df.groupby('master_metadata_track_name')['hours'].sum().sort_values(ascending=False)
-most_listened_track = track_hours.index[0]
-most_listened_hours = track_hours.iloc[0]
-most_listened_date = df[df['master_metadata_track_name'] == most_listened_track].groupby('date')['hours'].sum().idxmax()
-
-# --- Feature 5: Listening by Time of Day ---
-df['hour'] = pd.to_datetime(df['ts_local_clean']).dt.hour
-def time_bucket(h):
-    if 5 <= h <= 11:
-        return 'Morning (5-11)'
-    elif 12 <= h <= 17:
-        return 'Afternoon (12-17)'
-    elif 18 <= h <= 22:
-        return 'Evening (18-22)'
-    else:
-        return 'Night (23-4)'
-df['time_bucket'] = df['hour'].apply(time_bucket)
-time_of_day = df.groupby('time_bucket')['hours'].sum().reindex([
-    'Morning (5-11)', 'Afternoon (12-17)', 'Evening (18-22)', 'Night (23-4)']).reset_index()
-
-# --- Feature 7: Skips and Replays Insight ---
-total_skipped = df['skipped'].sum() if 'skipped' in df.columns else 0
-top_skipped = (df[df['skipped'] == True]
-               .groupby('master_metadata_track_name')
-               .size()
-               .sort_values(ascending=False)
-               .head(5)
-               .reset_index(name='Skips')) if 'skipped' in df.columns else pd.DataFrame()
-top_played = (df[df['skipped'] == False]
-              .groupby('master_metadata_track_name')['hours']
-              .sum()
-              .sort_values(ascending=False)
-              .head(5)
-              .reset_index()) if 'skipped' in df.columns else pd.DataFrame()
-
-# --- Custom Feature: Monthly and Weekday Trends ---
-df['month'] = pd.to_datetime(df['ts_local_clean']).dt.strftime('%b')
-df['month_num'] = pd.to_datetime(df['ts_local_clean']).dt.month
-df['weekday'] = pd.to_datetime(df['ts_local_clean']).dt.day_name()
-monthly_hours = df.groupby(['month_num', 'month'])['hours'].sum().reset_index().sort_values('month_num')
-
-# FIX: Average daily listening hours by weekday (use daily totals)
-daily_totals = df.groupby('date')['hours'].sum().reset_index()
-daily_totals['weekday'] = pd.to_datetime(daily_totals['date']).dt.day_name()
-weekday_hours = daily_totals.groupby('weekday')['hours'].mean().reindex([
-    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']).reset_index()
-
-# heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0)
-month_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
-               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-weekday_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-# Apply Categorical type to preserve order
-df['month'] = pd.Categorical(df['month'], categories=month_order, ordered=True)
-df['weekday'] = pd.Categorical(df['weekday'], categories=weekday_order, ordered=True)
-
-heatmap_data = df.groupby(['month', 'weekday'])['hours'].sum().unstack(fill_value=0).loc[month_order]
-
-
-# --- UI Section: Listening Streaks and Milestones ---
-st.markdown("## 🏆 Listening Streaks & Milestones")
-col1, col2, col3 = st.columns(3)
-with col1:
-    st.metric("Longest Listening Streak", f"{longest_streak} days", f"{longest_streak_start} → {longest_streak_end}")
-with col2:
-    st.metric("Day with Most Listening", f"{max_day_hours:.2f} hrs", f"{max_day}")
-with col3:
-    st.metric("First Song Played", f"{first_song}", f"{first_artist} ({first_date})")
-
-# Milestones Timeline
-st.markdown("### 🎉 Listening Milestones")
-for m, d in milestone_dates.items():
-    st.info(f"Crossed {m} hours on {d}")
-st.success(f"Most Listened Track: {most_listened_track} ({most_listened_hours:.2f} hrs), Top Day: {most_listened_date}")
-
-# --- UI Section: Listening by Time of Day ---
-st.markdown("## ⏰ Listening by Time of Day")
-fig_timeofday = px.bar(time_of_day, x='time_bucket', y='hours',
-                      color='time_bucket',
-                      color_discrete_sequence=['#1db954', '#b3b3b3', '#535353', '#191414'],
-                      title="Total Listening Hours by Time of Day")
-fig_timeofday.update_layout(showlegend=False, plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
-st.plotly_chart(fig_timeofday, use_container_width=True)
-
-# --- UI Section: Skips and Replays ---
-st.markdown("## ⏭️ Skips and Replays Insight")
-col1, col2 = st.columns(2)
-with col1:
-    st.metric("Total Skipped Tracks", int(total_skipped))
-    if not top_skipped.empty:
-        st.dataframe(top_skipped, use_container_width=True)
-with col2:
-    st.metric("Top Played (Non-Skipped)", "")
-    if not top_played.empty:
-        st.dataframe(top_played, use_container_width=True)
-
-# --- UI Section: Monthly and Weekday Trends ---
-st.markdown("## 📅 Monthly and Weekday Listening Trends")
-fig_month = px.bar(monthly_hours, x='month', y='hours',
-                   title="Total Listening Hours per Month",
-                   color_discrete_sequence=['#1db954'],
-                   category_orders={'month': list(monthly_hours['month'])})
-fig_month.update_layout(plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
-st.plotly_chart(fig_month, use_container_width=True)
-
-fig_weekday = px.bar(weekday_hours, x='weekday', y='hours',
-                     title="Average Daily Listening Hours by Weekday",
-                     color_discrete_sequence=['#1db954'],
-                     category_orders={'weekday': ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']})
-fig_weekday.update_layout(plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
-st.plotly_chart(fig_weekday, use_container_width=True)
-
-fig_heatmap = px.imshow(heatmap_data,
-                       labels=dict(x="Weekday", y="Month", color="Hours"),
-                       x=heatmap_data.columns,
-                       y=heatmap_data.index,
-                       color_continuous_scale=['#121212', '#1db954'],
-                       title="Listening Hours: Month vs. Weekday")
-fig_heatmap.update_layout(plot_bgcolor='#282828', paper_bgcolor='#282828', font=dict(color='white'))
-st.plotly_chart(fig_heatmap, use_container_width=True)
-
-# --- Feature 14: Export Summary to PDF/PNG (Placeholder) ---
-st.markdown("## 📤 Export Your Spotify Summary")
-st.info("Export to PDF/PNG coming soon! (Will include total hours, top tracks, top artist, and streaks)")
-# (Implementation would use pdfkit/imgkit/html2image and st.download_button)
