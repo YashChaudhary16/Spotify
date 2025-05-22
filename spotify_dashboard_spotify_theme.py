@@ -71,6 +71,29 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+st.markdown("""
+    <style>
+    .metric-card {
+        background: rgba(40,40,40,0.6);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 20px;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        color: #fff;
+    }
+    .metric-card h1 {
+        color: #1DB954;
+        font-size: 32px;
+    }
+    .metric-card p {
+        font-size: 16px;
+        color: #ccc;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
 # Load data
 @st.cache_data
 def load_data():
@@ -158,14 +181,11 @@ st.title("🎧 Your Ultimate Spotify Wrapped Dashboard")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Total Listening Hours", f"{total_hours:.2f}", 
-              help="Total hours spent listening to music")
+    st.markdown(f"""<div class="metric-card"><h1>{total_hours:.2f}</h1><p>Total Listening Hours</p></div>""", unsafe_allow_html=True)
 with col2:
-    st.metric("Total Tracks Played", f"{total_tracks:,}", 
-              help="Total number of unique tracks played")
+    st.markdown(f"""<div class="metric-card"><h1>{total_tracks:,}</h1><p>Total Tracks Played</p></div>""", unsafe_allow_html=True)
 with col3:
-    st.metric("Average Listen Time", formatted_avg,
-              help="Average listening time per day")
+    st.markdown(f"""<div class="metric-card"><h1>{formatted_avg}</h1><p>Avg Listen Time / Day</p></div>""", unsafe_allow_html=True)
 
 # Add a divider
 st.markdown("---")
