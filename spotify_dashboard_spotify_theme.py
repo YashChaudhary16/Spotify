@@ -172,34 +172,49 @@ st.markdown("---")
 
 # Top N Tracks
 st.subheader(f"🎵 Top {top_n} Tracks")
-top_tracks = (df[df['ms_played'] > 0]
-              .groupby('master_metadata_track_name')['hours']
-              .sum()
-              .sort_values(ascending=False)
-              .head(top_n)
-              .reset_index())
-top_tracks.columns = ['Track', 'Hours']
-top_tracks['Listening Time'] = top_tracks['Hours'].apply(
-    lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
-)
-top_tracks = top_tracks[['Track', 'Listening Time']]
-st.dataframe(top_tracks)
-
-# Top N Tracks by Artist
-# if artist_filter and artist_filter != "(All Artists)":
-#     st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
-#     artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
-#     top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
-#                          .sum()
-#                          .sort_values(ascending=False)
-#                          .head(top_n)
-#                          .reset_index())
-#     top_artist_tracks.columns = ['Track', 'Hours']
-#     top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
-#         lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
-#     )
-#     top_artist_tracks = top_artist_tracks[['Track', 'Listening Time']]
-#     st.dataframe(top_artist_tracks)
+if 'track_id' in df.columns:
+    top_tracks = (df[df['ms_played'] > 0]
+                  .groupby(['master_metadata_track_name', 'track_id'])['hours']
+                  .sum()
+                  .sort_values(ascending=False)
+                  .head(top_n)
+                  .reset_index())
+    top_tracks.columns = ['Track', 'Track ID', 'Hours']
+    top_tracks['Listening Time'] = top_tracks['Hours'].apply(
+        lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
+    )
+    for _, row in top_tracks.iterrows():
+        st.markdown(f"""
+        <div style='display: flex; align-items: center; background: #181818; border-radius: 16px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px #0003;'>
+            <div style='flex: 1; padding: 1.2rem 1.5rem;'>
+                <div style='font-size: 1.2rem; font-weight: 600; color: #fff;'>{row['Track']}</div>
+                <div style='color: #1DB954; font-size: 1rem; margin-top: 0.2rem;'>Listening Time: {row['Listening Time']}</div>
+            </div>
+            <div style='min-width: 340px; max-width: 340px; padding: 0.5rem 1.5rem 0.5rem 0;'>
+                <iframe src="https://open.spotify.com/embed/track/{row['Track ID']}" width="320" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 12px; background: #181818;"></iframe>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+else:
+    top_tracks = (df[df['ms_played'] > 0]
+                  .groupby('master_metadata_track_name')['hours']
+                  .sum()
+                  .sort_values(ascending=False)
+                  .head(top_n)
+                  .reset_index())
+    top_tracks.columns = ['Track', 'Hours']
+    top_tracks['Listening Time'] = top_tracks['Hours'].apply(
+        lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
+    )
+    for _, row in top_tracks.iterrows():
+        st.markdown(f"""
+        <div style='display: flex; align-items: center; background: #181818; border-radius: 16px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px #0003;'>
+            <div style='flex: 1; padding: 1.2rem 1.5rem;'>
+                <div style='font-size: 1.2rem; font-weight: 600; color: #fff;'>{row['Track']}</div>
+                <div style='color: #1DB954; font-size: 1rem; margin-top: 0.2rem;'>Listening Time: {row['Listening Time']}</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # Platform Comparison
 st.subheader("🖥️ Platform Usage Comparison")
@@ -330,29 +345,48 @@ if artist_filter and artist_filter != "(All Artists)":
         st.metric(f"Average Daily Hours of {artist_filter}", f"{artist_avg_hours:.2f}")
     
     # Artist's top tracks
-    # st.subheader(f"🎵 Top {int(top_n)} Tracks by {artist_filter}")
-    # top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
-    #                     .sum()
-    #                     .sort_values(ascending=False)
-    #                     .head(int(top_n))
-    #                     .reset_index())
-    # top_artist_tracks.columns = ['Track', 'Hours']
-    # top_artist_tracks['Hours'] = top_artist_tracks['Hours'].round(2)
-    # st.dataframe(top_artist_tracks)
-
     st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
-    artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
-    top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
-                         .sum()
-                         .sort_values(ascending=False)
-                         .head(top_n)
-                         .reset_index())
-    top_artist_tracks.columns = ['Track', 'Hours']
-    top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
-        lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
-    )
-    top_artist_tracks = top_artist_tracks[['Track', 'Listening Time']]
-    st.dataframe(top_artist_tracks)
+    if 'track_id' in artist_df.columns:
+        top_artist_tracks = (artist_df.groupby(['master_metadata_track_name', 'track_id'])['hours']
+                             .sum()
+                             .sort_values(ascending=False)
+                             .head(top_n)
+                             .reset_index())
+        top_artist_tracks.columns = ['Track', 'Track ID', 'Hours']
+        top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
+            lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
+        )
+        for _, row in top_artist_tracks.iterrows():
+            st.markdown(f"""
+            <div style='display: flex; align-items: center; background: #181818; border-radius: 16px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px #0003;'>
+                <div style='flex: 1; padding: 1.2rem 1.5rem;'>
+                    <div style='font-size: 1.2rem; font-weight: 600; color: #fff;'>{row['Track']}</div>
+                    <div style='color: #1DB954; font-size: 1rem; margin-top: 0.2rem;'>Listening Time: {row['Listening Time']}</div>
+                </div>
+                <div style='min-width: 340px; max-width: 340px; padding: 0.5rem 1.5rem 0.5rem 0;'>
+                    <iframe src="https://open.spotify.com/embed/track/{row['Track ID']}" width="320" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media" style="border-radius: 12px; background: #181818;"></iframe>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        top_artist_tracks = (artist_df.groupby('master_metadata_track_name')['hours']
+                             .sum()
+                             .sort_values(ascending=False)
+                             .head(top_n)
+                             .reset_index())
+        top_artist_tracks.columns = ['Track', 'Hours']
+        top_artist_tracks['Listening Time'] = top_artist_tracks['Hours'].apply(
+            lambda h: f"{int(h)} hrs {int(round((h - int(h)) * 60))} mins"
+        )
+        for _, row in top_artist_tracks.iterrows():
+            st.markdown(f"""
+            <div style='display: flex; align-items: center; background: #181818; border-radius: 16px; margin-bottom: 1.5rem; box-shadow: 0 2px 8px #0003;'>
+                <div style='flex: 1; padding: 1.2rem 1.5rem;'>
+                    <div style='font-size: 1.2rem; font-weight: 600; color: #fff;'>{row['Track']}</div>
+                    <div style='color: #1DB954; font-size: 1rem; margin-top: 0.2rem;'>Listening Time: {row['Listening Time']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
     # Helper: Time bucket function
     def time_bucket(h):
