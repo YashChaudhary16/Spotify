@@ -345,24 +345,104 @@ if artist_filter and artist_filter != "(All Artists)":
             return None
         return None
     artist_img_url = get_artist_image(artist_filter)
-    if artist_img_url:
-        st.image(artist_img_url, caption=artist_filter, width=200)
-    else:
-        st.info(f"No image found for {artist_filter}.")
+    # 🎨 Enhanced Artist Section - Premium UI
+    st.markdown("""
+    <style>
+    .artist-card {
+        display: flex;
+        flex-wrap: wrap;
+        background: linear-gradient(145deg, #1e1e1e, #151515);
+        border-radius: 20px;
+        padding: 24px;
+        margin-top: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        transition: all 0.3s ease-in-out;
+    }
+    .artist-image {
+        width: 240px;
+        height: auto;
+        border-radius: 16px;
+        object-fit: cover;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        margin-right: 32px;
+        margin-bottom: 20px;
+    }
+    .artist-info {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+    }
+    .artist-info h3 {
+        color: #1DB954;
+        font-size: 2rem;
+        margin-bottom: 20px;
+        font-weight: 600;
+    }
+    .metric-row {
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+    .metric-box {
+        background: #222;
+        border-radius: 12px;
+        padding: 20px 30px;
+        text-align: center;
+        box-shadow: 0 0 0 1px #2b2b2b;
+        flex: 1;
+        min-width: 160px;
+        transition: transform 0.2s;
+    }
+    .metric-box:hover {
+        transform: scale(1.03);
+        box-shadow: 0 0 12px #1DB95444;
+    }
+    .metric-box h2 {
+        color: #fff;
+        font-size: 2.2rem;
+        margin-bottom: 8px;
+        font-weight: 700;
+    }
+    .metric-box span {
+        color: #b3b3b3;
+        font-size: 0.95rem;
+        letter-spacing: 0.5px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
+    # Artist Data
     artist_df = df[df['master_metadata_album_artist_name'] == artist_filter]
-    
-    # Artist-specific metrics
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        artist_hours = artist_df['hours'].sum().round(2)
-        st.metric(f"Total Hours Listening to {artist_filter}", f"{artist_hours:.2f}")
-    with col2:
-        artist_tracks = len(artist_df['master_metadata_track_name'].unique())
-        st.metric(f"Unique Tracks by {artist_filter}", artist_tracks)
-    with col3:
-        artist_avg_hours = artist_hours / unique_days if unique_days > 0 else 0
-        st.metric(f"Average Daily Hours of {artist_filter}", f"{artist_avg_hours:.2f}")
+    artist_hours = artist_df['hours'].sum().round(2)
+    artist_tracks = len(artist_df['master_metadata_track_name'].unique())
+    artist_avg_hours = artist_hours / unique_days if unique_days > 0 else 0
+
+    # HTML Block
+    artist_card_html = f"""
+    <div class="artist-card">
+        <img class="artist-image" src="{artist_img_url}" alt="{artist_filter}">
+        <div class="artist-info">
+            <h3>{artist_filter}</h3>
+            <div class="metric-row">
+                <div class="metric-box">
+                    <h2>{artist_hours:.2f}</h2>
+                    <span>Total Hours Listened</span>
+                </div>
+                <div class="metric-box">
+                    <h2>{artist_tracks}</h2>
+                    <span>Unique Tracks</span>
+                </div>
+                <div class="metric-box">
+                    <h2>{artist_avg_hours:.2f}</h2>
+                    <span>Avg Daily Listening (hrs)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    """
+    st.markdown(artist_card_html, unsafe_allow_html=True)
     
     # Artist's top tracks
     st.subheader(f"🎤 Top {top_n} Tracks by {artist_filter}")
