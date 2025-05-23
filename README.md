@@ -1,62 +1,111 @@
-# Spotify Streaming History Analytics Dashboard
+# 🎧 Spotify Wrapped Dashboard
 
-This is an interactive dashboard for analyzing your Spotify streaming history data.
+![Spotify Logo](https://upload.wikimedia.org/wikipedia/commons/1/19/Spotify_logo_without_text.svg)
 
-## Features
+An interactive and visually polished Streamlit dashboard that turns your Spotify listening data into an immersive analytics experience — inspired by Spotify Wrapped.
 
-- **Overall Listening Stats**: View total listening time, number of tracks/episodes, and daily averages
-- **Listening Patterns**: Analyze your listening by hour of day and day of week
-- **Monthly Trends**: See how your listening habits have changed over time
-- **Content Analysis**: Discover your top artists, tracks, shows, and episodes
-- **Platform Usage**: See which devices you use most for streaming
+## 📽 Demo Video
 
-## Screenshots
+<!-- Replace the URL below with your uploaded video link on GitHub -->
+Go to:
+Videos and Screenshots/Spotify Analytics Project.mp4
 
-![Dashboard Preview](dashboard_preview.jpg)
+---
 
-## Requirements
+## ✨ Features
 
-- Python 3.7+
-- Libraries listed in `requirements.txt`
+- 🎵 **Top Tracks & Artists** with embedded Spotify previews  
+- 📅 **Year-wise Filtering** via interactive checkboxes  
+- 📈 **Listening Trends** by day, time of day, and month  
+- 🗺️ **Geographic Listening Patterns** across countries  
+- 🔀 **Shuffle vs. Non-Shuffle**, **Offline vs. Online**  
+- 🏆 **Longest Listening Streaks & Milestones**  
+- 📊 **Platform Comparison**: Android, iOS, Web, etc.  
+- 🎤 **Artist-Specific Analysis** (with Wikipedia image integration)  
+- 🎨 **Custom Dark UI Theme** styled with CSS and hover animations  
 
-## Installation
+---
 
-1. Clone or download this repository
-2. Install required libraries:
-
-```bash
-pip install -r requirements.txt
-```
-
-## Usage
-
-1. Ensure your Spotify data files are in the same directory as the script
-2. Run the dashboard application:
+## 📂 Project Structure
 
 ```bash
-streamlit run spotify_dashboard.py
+spotify-wrapped-dashboard/
+├── spotify_dashboard_spotify_theme.py   # Main Streamlit dashboard code
+├── df_clean.csv                         # Your cleaned Spotify listening data
+├── README.md                            # This documentation
 ```
 
-3. The dashboard will open in your default web browser at http://localhost:8501
+---
 
-## Data Requirements
+## 🚀 Getting Started
 
-The dashboard expects the following files:
-- `Streaming_History_Audio_*.json`: One or more JSON files containing audio streaming history
-- `Streaming_History_Video_2021-2025.json`: JSON file containing video streaming history
-
-## Troubleshooting
-
-If you encounter dependency issues, try:
+### 1. Clone the repository
 
 ```bash
-pip install numpy==1.24.3 --force-reinstall
-pip install pandas==1.5.3
-pip install streamlit==1.32.0
-pip install plotly==5.18.0
+git clone https://github.com/your-username/spotify-wrapped-dashboard.git
+cd spotify-wrapped-dashboard
 ```
 
-## Notes
+### 2. Install dependencies
 
-- The dashboard handles deduplication of entries to avoid counting the same track multiple times
-- Filtering options allow you to focus on specific years or content types 
+```bash
+pip install streamlit pandas plotly requests
+```
+
+### 3. Prepare your data
+
+Rename your Spotify listening history CSV to:
+
+```bash
+df_clean.csv
+```
+
+Ensure the dataset includes these key fields:
+- `ts_local_clean` (timestamp)
+- `ms_played`
+- `master_metadata_track_name`
+- `master_metadata_album_artist_name`
+- `platform_clean`
+- `conn_country_full`
+
+### 4. Launch the dashboard
+
+```bash
+streamlit run spotify_dashboard_spotify_theme.py
+```
+
+---
+
+## 🖼 Sample Preview
+
+<!-- Replace this image URL with a screenshot of your dashboard -->
+![Dashboard Preview](https://github.com/YashChaudhary16/Spotify/blob/main/Videos%20and%20Screenshots/Screenshot%202025-05-22%20191005.png)
+
+---
+
+## 🛠 Customization Ideas
+
+- Export report as PDF or PNG    
+- A CI/CD pipeline to pre-process data (from json) as required by this project.
+- Add song recommendations based on patterns  
+
+---
+
+## 📃 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## 🙏 Acknowledgements
+
+- [Spotify](https://www.spotify.com) – inspiration and data  
+- [Streamlit](https://streamlit.io/) – dashboarding framework  
+- [Plotly](https://plotly.com/) – interactive visualizations  
+
+---
+
+## 🤝 Contribute
+
+Want to enhance the dashboard, fix bugs, or request features?  
+Feel free to open an issue or submit a pull request!
