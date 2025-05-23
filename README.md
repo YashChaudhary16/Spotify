@@ -39,6 +39,10 @@ spotify-wrapped-dashboard/
 
 ## 🚀 Getting Started
 
+### 0. Getting your own Spotify data
+
+- Log in to the Spotify website and request your data. It may take a few days for them (Spotify) to collect and send the data to you. The data will be in JSON format, which you'll need to pre-process to get data similar to "data_clean.csv" format and then use it for the dashboard.
+
 ### 1. Clone the repository
 
 ```bash
